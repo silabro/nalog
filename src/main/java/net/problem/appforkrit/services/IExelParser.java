@@ -18,4 +18,8 @@ public interface IExelParser {
      */
     ParseResponseDTO parseExelFileAndGetResponseDTO(String fileDirectory, String fileName);
 
+    boolean moveFileToDirectory(String fileName, String fileDirectoryFrom, String fileDirectoryWhere);
+
+
+
 }

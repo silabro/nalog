@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -27,7 +28,7 @@ public class ExelParser implements IExelParser {
 
     @Override
     public ParseResponseDTO parseExelFileAndGetResponseDTO(String fileDirectory, String fileName) {
-        String fileAddress = fileDirectory.concat(fileName);
+        String fileAddress = getFileAddress(fileDirectory, fileName);
         Path exelFilePath = Paths.get(fileAddress);
         Workbook workbook = getWorkbook(fileAddress, exelFilePath);
 
@@ -36,6 +37,25 @@ public class ExelParser implements IExelParser {
         }
 
         return getBadResponseDTO();
+    }
+
+    @Override
+    public boolean moveFileToDirectory(String fileName, String fileDirectoryFrom, String fileDirectoryWhere) {
+        Path resultMove = null;
+        String fileAddressFrom = getFileAddress(fileDirectoryFrom, fileName);
+        String fileAddressWhere = getFileAddress(fileDirectoryWhere, fileName);
+
+        try {
+            resultMove =  Files.move(Paths.get(fileAddressFrom), Paths.get(fileAddressWhere));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return resultMove != null;
+    }
+
+    private String getFileAddress(String fileDirectory, String fileName){
+        return fileDirectory.concat(fileName);
     }
 
     private BookDTO parseAndGetBookDTO(Workbook workbook){
