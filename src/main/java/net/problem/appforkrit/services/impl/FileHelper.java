@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -83,7 +84,19 @@ public class FileHelper implements IFileHelper {
      */
     @Override
     public ArrayList<String> getFileNamesFromDirectory(String fileDirectoryFrom) {
-        return null;
+        ArrayList<String> fileNames = new ArrayList<>();
+
+        try {
+            Files.walk(Paths.get(fileDirectoryFrom), FileVisitOption.FOLLOW_LINKS).forEach(file -> {
+                Path path = file.getFileName();
+                if (!file.toFile().isDirectory() && ( compareEndsFileName(path, XLSX) || compareEndsFileName(path, XLS)))
+                    fileNames.add(file.getFileName().toString());
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return fileNames;
     }
 
     private String getFileAddress(String fileDirectory, String fileName){
