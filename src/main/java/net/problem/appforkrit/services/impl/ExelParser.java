@@ -30,11 +30,12 @@ public class ExelParser implements IExelParser {
 
     private final NalogRepository nalogRepository;
 
+    private final FileHelper fileHelper;
+
     @Override
     public ResponseParseEntity parseExelFileAndGetResponseParseEntity(String fileDirectory, String fileName) {
         String fileAddress = getFileAddress(fileDirectory, fileName);
-        Path exelFilePath = Paths.get(fileAddress);
-        Workbook workbook = getWorkbook(fileAddress, exelFilePath);
+        Workbook workbook = fileHelper.getWorkbook(fileAddress);
 
         if(workbook != null){
             return getResponseEntity(true, parseAndGetBookEntity(workbook));
@@ -44,23 +45,8 @@ public class ExelParser implements IExelParser {
     }
 
     @Override
-    public boolean moveFileToDirectory(String fileName, String fileDirectoryFrom, String fileDirectoryWhere) {
-        Path resultMove = null;
-        String fileAddressFrom = getFileAddress(fileDirectoryFrom, fileName);
-        String fileAddressWhere = getFileAddress(fileDirectoryWhere, fileName);
-
-        try {
-            resultMove =  Files.move(Paths.get(fileAddressFrom), Paths.get(fileAddressWhere));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return resultMove != null;
-    }
-
-    @Override
     public ResponseParseSaveEntity parseAndSaveToRepositoryAllExelFilesFromDirectoryAndMoveParsedFiles (String directoryWhereParse, String directoryWhereMoveParsedFiles) {
-        ArrayList<String> fileNames = getFileNamesFromDirectory(directoryWhereParse);
+        ArrayList<String> fileNames = fileHelper.getFileNamesFromDirectory(directoryWhereParse);
         ArrayList<String> parsedAndSavedFileNames = new ArrayList<>();
 
         for (String fileName : fileNames){
@@ -98,48 +84,9 @@ public class ExelParser implements IExelParser {
         return getResponseParseSaveEntity(parsedAndSavedFileNames);
     }
 
-    public ArrayList<String> getFileNamesFromDirectory(String fileDirectoryFrom){
-        ArrayList<String> fileNames = new ArrayList<>();
-
-        try {
-            Files.walk(Paths.get(fileDirectoryFrom), FileVisitOption.FOLLOW_LINKS).forEach(file -> {
-                Path path = file.getFileName();
-                if (!file.toFile().isDirectory() && ( compareEndsFileName(path, XLSX) || compareEndsFileName(path, XLS)))
-                    fileNames.add(file.getFileName().toString());
-            });
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return fileNames;
-    }
-
-    public Workbook getWorkbook(String fileAddress, Path path){
-        Workbook workbook = null;
-        InputStream inputStream;
-
-        try {
-            inputStream = new FileInputStream(fileAddress);
-
-            if(compareEndsFileName(path, XLSX)){
-                workbook = new XSSFWorkbook(inputStream);
-            }
-            if (compareEndsFileName(path, XLS)) {
-                workbook = new HSSFWorkbook(inputStream);
-            }
-
-            inputStream.close();
-        }
-        catch (IOException | NullPointerException e) {
-            e.printStackTrace();
-        }
-
-        return workbook;
-    }
-
     private String saveToRepositoryAndMoveFileAndGetFileName(NalogEntity nalogEntity, String fileName, String directoryWhereParse, String directoryWhereMoveParsedFiles){
         nalogRepository.save(nalogEntity);
-        moveFileToDirectory(fileName, directoryWhereParse, directoryWhereMoveParsedFiles);
+        fileHelper.moveFileToDirectory(fileName, directoryWhereParse, directoryWhereMoveParsedFiles);
 
         return fileName;
     }
@@ -345,10 +292,6 @@ public class ExelParser implements IExelParser {
         }
 
         return getBookDTO(sheetEntityList);
-    }
-
-    private boolean compareEndsFileName(Path path, ExelFileTypeEnum exelFileTypeEnum){
-        return path.getFileName().toString().endsWith("."+ exelFileTypeEnum.getExelFileType());
     }
 
     private ResponseParseEntity getResponseEntity(boolean success, BookEntity bookEntity){

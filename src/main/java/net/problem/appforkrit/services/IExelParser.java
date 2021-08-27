@@ -29,5 +29,4 @@ public interface IExelParser {
      */
     ResponseParseSaveEntity parseAndSaveToRepositoryAllExelFilesFromDirectoryAndMoveParsedFiles (String directoryWhereParse, String directoryWhereMoveParsedFiles);
 
-    boolean moveFileToDirectory(String fileName, String fileDirectoryFrom, String fileDirectoryWhere);
 }
