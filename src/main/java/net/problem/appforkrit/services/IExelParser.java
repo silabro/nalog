@@ -13,14 +13,21 @@ public interface IExelParser {
      *
      * @param fileDirectory - строка указывающая дерикторию файла
      * @param fileName      - строка указывающая наименование файла
-     * @return - ParseResponseDTO:
+     * @return - ResponseParseEntity:
      * success, true в случае успешного парсинга файла;
-     * BookDTO, содержит в себе листы Exel файла, листы содержат строки, строки содержат ячейки.
+     * BookEntity, содержит в себе листы Exel файла в виде SheetEntity, листы содержат строки, строки содержат ячейки.
      */
     ResponseParseEntity parseExelFileAndGetResponseParseEntity(String fileDirectory, String fileName);
 
-    boolean moveFileToDirectory(String fileName, String fileDirectoryFrom, String fileDirectoryWhere);
-
+    /**
+     * Считывает все файлы (формата .xls или .xlsx) из директории, сохраняет данные в репозиторий и перемещает успешно считанные в указаную директорию
+     *
+     * @param directoryWhereParse   - строка указывающая директорию откуда считывать файлы
+     * @param directoryWhereMoveParsedFiles - строка указывающая куда перемещать файлы из которых информация была успешна записана в репозиторий
+     * @return  - ResponseParseSaveEntity:
+     * List содержащий в себе строки именований файлов которые были успешно записаны в репозиторий.
+     */
     ResponseParseSaveEntity parseAndSaveToRepositoryAllExelFilesFromDirectoryAndMoveParsedFiles (String directoryWhereParse, String directoryWhereMoveParsedFiles);
 
+    boolean moveFileToDirectory(String fileName, String fileDirectoryFrom, String fileDirectoryWhere);
 }
