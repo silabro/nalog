@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.6.xsd">
+    <changeSet id="25.08.2021T20:16:00" author="Shevtsev">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="NALOG1NOM_SHEVTSEV"/>
+            </not>
+        </preConditions>
+        <createTable tableName="NALOG1NOM_SHEVTSEV">
+            <column name="ID" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true"
+                             nullable="false"
+                             unique="true"/>
+            </column>
+            <column name="FIELDA" type="VARCHAR"/>
+            <column name="FIELDB" type="VARCHAR"/>
+            <column name="FIELDV" type="VARCHAR"/>
+            <column name="FIELD1" type="VARCHAR"/>
+            <column name="FIELD2" type="VARCHAR"/>
+            <column name="FIELD3" type="VARCHAR"/>
+            <column name="FIELD4" type="VARCHAR"/>
+            <column name="FIELD5" type="VARCHAR"/>
+            <column name="FIELD6" type="VARCHAR"/>
+            <column name="FIELD7" type="VARCHAR"/>
+            <column name="FIELD8" type="VARCHAR"/>
+            <column name="FIELD9" type="VARCHAR"/>
+            <column name="FIELD10" type="VARCHAR"/>
+            <column name="FIELD11" type="VARCHAR"/>
+            <column name="FIELD12" type="VARCHAR"/>
+            <column name="FIELD13" type="VARCHAR"/>
+            <column name="FIELD14" type="VARCHAR"/>
+            <column name="FIELD15" type="VARCHAR"/>
+            <column name="FIELD16" type="VARCHAR"/>
+            <column name="FIELD17" type="VARCHAR"/>
+            <column name="FIELD18" type="VARCHAR"/>
+            <column name="FIELD19" type="VARCHAR"/>
+            <column name="FIELD20" type="VARCHAR"/>
+            <column name="FIELD21" type="VARCHAR"/>
+            <column name="FIELD22" type="VARCHAR"/>
+            <column name="FIELD23" type="VARCHAR"/>
+            <column name="FIELD24" type="VARCHAR"/>
+            <column name="FIELD25" type="VARCHAR"/>
+            <column name="TER" type="VARCHAR(3)"/>
+            <column name="DAT" type="VARCHAR(10)"/>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>
