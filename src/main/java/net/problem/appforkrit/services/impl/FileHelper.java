@@ -1,14 +1,22 @@
 package net.problem.appforkrit.services.impl;
 
 import net.problem.appforkrit.services.IFileHelper;
+import net.problem.appforkrit.services.common.ExelFileTypeEnum;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+
+import static net.problem.appforkrit.services.common.ExelFileTypeEnum.XLS;
+import static net.problem.appforkrit.services.common.ExelFileTypeEnum.XLSX;
 
 @Service
 public class FileHelper implements IFileHelper {
@@ -44,7 +52,27 @@ public class FileHelper implements IFileHelper {
      */
     @Override
     public Workbook getWorkbook(String fileAddress) {
-        return null;
+        Workbook workbook = null;
+        Path filePath = Paths.get(fileAddress);
+        InputStream inputStream;
+
+        try {
+            inputStream = new FileInputStream(fileAddress);
+
+            if(compareEndsFileName(filePath, XLSX)){
+                workbook = new XSSFWorkbook(inputStream);
+            }
+            if (compareEndsFileName(filePath, XLS)) {
+                workbook = new HSSFWorkbook(inputStream);
+            }
+
+            inputStream.close();
+        }
+        catch (IOException | NullPointerException e) {
+            e.printStackTrace();
+        }
+
+        return workbook;
     }
 
     /**
@@ -60,5 +88,9 @@ public class FileHelper implements IFileHelper {
 
     private String getFileAddress(String fileDirectory, String fileName){
         return fileDirectory.concat(fileName);
+    }
+
+    private boolean compareEndsFileName(Path path, ExelFileTypeEnum exelFileTypeEnum){
+        return path.getFileName().toString().endsWith("."+ exelFileTypeEnum.getExelFileType());
     }
 }
