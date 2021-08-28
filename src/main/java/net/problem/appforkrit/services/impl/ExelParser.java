@@ -115,7 +115,7 @@ public class ExelParser implements IExelParser {
                                 if(checkFirstAndThirdCellNotEmpty(parseResultCells)){
                                     Long regionAndDateId = getRegionAndDateIdByNumberRegionAndDate(regionNumber, date);
 
-                                    DataRowsEntity dataRowsEntity = MAPPER.mapWithCellsAndRegionAndDateIdAndNumberRowToDataRowsEntity(parseResultCells, regionAndDateId, regionNumber);
+                                    DataRowsEntity dataRowsEntity = MAPPER.mapWithCellsAndRegionAndDateIdAndNumberRowToDataRowsEntity(parseResultCells, regionAndDateId, index);
 
                                     dataRowsRepository.save(dataRowsEntity);
                                 }
