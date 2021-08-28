@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.6.xsd">
+    <changeSet id="28.08.2021T03:28:00" author="Shevtsev">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="DATA_ROWS"/>
+            </not>
+        </preConditions>
+        <createTable tableName="DATA_ROWS">
+            <column name="ID" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true"
+                             nullable="false"
+                             unique="true"/>
+            </column>
+            <column name="REGION_AND_DATE_ID" type="BIGINT" autoIncrement="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="NUMBER_ROW" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELLA" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELLB" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELLV" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL1" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL2" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL3" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL4" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL5" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL6" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL7" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL8" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL9" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL10" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL11" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL12" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL13" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL14" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL15" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL16" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL17" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL18" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL19" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL20" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL21" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL22" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL23" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL24" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CELL25" type="VARCHAR">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>
