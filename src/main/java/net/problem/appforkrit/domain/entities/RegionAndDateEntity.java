@@ -15,6 +15,6 @@ public class RegionAndDateEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private short numberRegion;
+    private Short numberRegion;
     private Date date;
 }
