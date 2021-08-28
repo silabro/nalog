@@ -1,6 +1,8 @@
 package net.problem.appforkrit.mapping;
 
+import net.problem.appforkrit.domain.entities.DataRowsEntity;
 import net.problem.appforkrit.domain.entities.NalogEntity;
+import net.problem.appforkrit.domain.entities.RegionAndDateEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
@@ -47,6 +49,43 @@ public interface NalogMapper {
         nalogEntity.setDat(dat);
 
         return nalogEntity;
+    }
+
+    default DataRowsEntity mapWithCellsAndRegionAndDateIdAndNumberRowToDataRowsEntity(LinkedHashMap<Short, String> cells, Long regionAndDateId,int numberRow){
+        DataRowsEntity dataRowsEntity = new DataRowsEntity();
+
+        dataRowsEntity.setNumberRow(numberRow);
+        dataRowsEntity.setRegionAndDateId(regionAndDateId);
+        dataRowsEntity.setCell1(ifEmptyThenZero(cells.get((short) 0)));
+        dataRowsEntity.setCellb(ifEmptyThenZero(cells.get((short) 1)));
+        dataRowsEntity.setCellv(ifEmptyThenZero(cells.get((short) 2)));
+        dataRowsEntity.setCell1(ifEmptyThenZero(cells.get((short) 3)));
+        dataRowsEntity.setCell2(ifEmptyThenZero(cells.get((short) 4)));
+        dataRowsEntity.setCell3(ifEmptyThenZero(cells.get((short) 5)));
+        dataRowsEntity.setCell4(ifEmptyThenZero(cells.get((short) 6)));
+        dataRowsEntity.setCell5(ifEmptyThenZero(cells.get((short) 7)));
+        dataRowsEntity.setCell6(ifEmptyThenZero(cells.get((short) 8)));
+        dataRowsEntity.setCell7(ifEmptyThenZero(cells.get((short) 9)));
+        dataRowsEntity.setCell8(ifEmptyThenZero(cells.get((short) 10)));
+        dataRowsEntity.setCell9(ifEmptyThenZero(cells.get((short) 11)));
+        dataRowsEntity.setCell10(ifEmptyThenZero(cells.get((short) 12)));
+        dataRowsEntity.setCell11(ifEmptyThenZero(cells.get((short) 13)));
+        dataRowsEntity.setCell12(ifEmptyThenZero(cells.get((short) 14)));
+        dataRowsEntity.setCell13(ifEmptyThenZero(cells.get((short) 15)));
+        dataRowsEntity.setCell14(ifEmptyThenZero(cells.get((short) 16)));
+        dataRowsEntity.setCell15(ifEmptyThenZero(cells.get((short) 17)));
+        dataRowsEntity.setCell16(ifEmptyThenZero(cells.get((short) 18)));
+        dataRowsEntity.setCell17(ifEmptyThenZero(cells.get((short) 19)));
+        dataRowsEntity.setCell18(ifEmptyThenZero(cells.get((short) 20)));
+        dataRowsEntity.setCell19(ifEmptyThenZero(cells.get((short) 21)));
+        dataRowsEntity.setCell20(ifEmptyThenZero(cells.get((short) 22)));
+        dataRowsEntity.setCell21(ifEmptyThenZero(cells.get((short) 23)));
+        dataRowsEntity.setCell22(ifEmptyThenZero(cells.get((short) 24)));
+        dataRowsEntity.setCell23(ifEmptyThenZero(cells.get((short) 25)));
+        dataRowsEntity.setCell24(ifEmptyThenZero(cells.get((short) 26)));
+        dataRowsEntity.setCell25(ifEmptyThenZero(cells.get((short) 27)));
+
+        return dataRowsEntity;
     }
 
     default String ifEmptyThenZero(String field){

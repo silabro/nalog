@@ -2,26 +2,20 @@ package net.problem.appforkrit.services.impl;
 
 import lombok.RequiredArgsConstructor;
 import net.problem.appforkrit.domain.entities.*;
+import net.problem.appforkrit.domain.repositories.DataRowsRepository;
 import net.problem.appforkrit.domain.repositories.NalogRepository;
+import net.problem.appforkrit.domain.repositories.RegionAndDateRepository;
 import net.problem.appforkrit.services.IExelParser;
-import net.problem.appforkrit.services.common.ExelFileTypeEnum;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.FileVisitOption;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.sql.Date;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static net.problem.appforkrit.services.common.ExelFileTypeEnum.*;
 import static net.problem.appforkrit.mapping.NalogMapper.MAPPER;
 
 @Service
@@ -29,6 +23,8 @@ import static net.problem.appforkrit.mapping.NalogMapper.MAPPER;
 public class ExelParser implements IExelParser {
 
     private final NalogRepository nalogRepository;
+    private final RegionAndDateRepository regionAndDateRepository;
+    private final DataRowsRepository dataRowsRepository;
 
     private final FileHelper fileHelper;
 
@@ -84,6 +80,103 @@ public class ExelParser implements IExelParser {
         return getResponseParseSaveEntity(parsedAndSavedFileNames);
     }
 
+    /**
+     * Считывает все файлы (формата .xls или .xlsx) из директории, сохраняет данные в ДВА репозитория и перемещает успешно считанные в указанную директорию
+     *
+     * @param directoryWhereParse           - строка указывающая директорию откуда считывать файлы
+     * @param directoryWhereMoveParsedFiles - строка указывающая куда перемещать файлы из которых информация была успешна записана в репозиторий
+     * @return - ResponseParseSaveEntity:
+     * List содержащий в себе строки именований файлов которые были успешно записаны в репозиторий.
+     */
+    @Override
+    public ResponseParseSaveEntity parseAndSaveToTwoRepositoryAllExelFilesFromDirectoryAndMoveParsedFiles(String directoryWhereParse, String directoryWhereMoveParsedFiles) {
+        ArrayList<String> fileNames = fileHelper.getFileNamesFromDirectory(directoryWhereParse);
+        ArrayList<String> parsedAndSavedFileNames = new ArrayList<>();
+
+        for (String fileName : fileNames){
+            String regionNumberString = getRegionNumberFromFileName(fileName);
+            String dateString = getDateFromFileName(fileName);
+            ResponseParseEntity parseResult = parseExelFileAndGetResponseParseEntity(directoryWhereParse, fileName);
+            ArrayList<SheetEntity> parseResultSheets = parseResult.getBook().getSheets();
+
+            if(parseResult.isSuccess()){
+                for(SheetEntity sheet : parseResultSheets){
+                    ArrayList<RowEntity> parseResultRows = sheet.getRows();
+                    int indexRowStart = getIndexRowStartNeededData(parseResultRows);
+
+                    if(indexRowStart > 0){
+                        short regionNumber = Short.parseShort(regionNumberString);
+                        Date date = getDateFromString(dateString);
+
+                        for(int index = indexRowStart; index < parseResultRows.size(); index++){
+                            LinkedHashMap<Short, String> parseResultCells = parseResultRows.get(index).getCells();
+
+                            if(parseResultCells.size() > 0){
+                                if(checkFirstAndThirdCellNotEmpty(parseResultCells)){
+                                    Long regionAndDateId = getRegionAndDateIdByNumberRegionAndDate(regionNumber, date);
+
+                                    DataRowsEntity dataRowsEntity = MAPPER.mapWithCellsAndRegionAndDateIdAndNumberRowToDataRowsEntity(parseResultCells, regionAndDateId, regionNumber);
+
+                                    dataRowsRepository.save(dataRowsEntity);
+                                }
+                            }
+                        }
+
+                        parsedAndSavedFileNames.add(fileName);
+                        fileHelper.moveFileToDirectory(fileName, directoryWhereParse, directoryWhereMoveParsedFiles);
+                    }
+                }
+            }
+        }
+
+        return getResponseParseSaveEntity(parsedAndSavedFileNames);
+    }
+
+
+
+    private RegionAndDateEntity findRegionAndDateByNumberRegionAndDateOrSave(short regionNumber, Date date){
+        RegionAndDateEntity regionAndDateEntityFound = regionAndDateRepository.findByNumberRegionAndDate(regionNumber, date);
+
+        if (regionAndDateEntityFound == null) {
+            RegionAndDateEntity regionAndDateEntityNew = getRegionAndDateEntity(regionNumber, date);
+
+            return regionAndDateRepository.save(regionAndDateEntityNew);
+        }
+
+        return regionAndDateEntityFound;
+    }
+
+    private RegionAndDateEntity getRegionAndDateEntity(short regionNumber, Date date){
+        RegionAndDateEntity regionAndDateEntity = new RegionAndDateEntity();
+
+        regionAndDateEntity.setNumberRegion(regionNumber);
+        regionAndDateEntity.setDate(date);
+
+        return regionAndDateEntity;
+    }
+
+    private Long getRegionAndDateIdByNumberRegionAndDate(short regionNumber, Date date){
+        RegionAndDateEntity regionAndDateEntity = findRegionAndDateByNumberRegionAndDateOrSave(regionNumber, date);
+
+        return regionAndDateEntity.getId();
+    }
+
+    private Date getDateFromString(String dateString) {
+        Date dateResult = null;
+        SimpleDateFormat currentFormat = new SimpleDateFormat("dd-MM-yyyy");
+        SimpleDateFormat neededFormat = new SimpleDateFormat("yyyy-MM-dd");
+
+        dateString = dateString.replace('.', '-');
+        try {
+            dateResult = Date.valueOf(neededFormat.format(currentFormat.parse(dateString)));
+        }
+        catch (ParseException e){
+            e.printStackTrace();
+        }
+
+        return dateResult;
+    }
+
     private String saveToRepositoryAndMoveFileAndGetFileName(NalogEntity nalogEntity, String fileName, String directoryWhereParse, String directoryWhereMoveParsedFiles){
         nalogRepository.save(nalogEntity);
         fileHelper.moveFileToDirectory(fileName, directoryWhereParse, directoryWhereMoveParsedFiles);
@@ -105,43 +198,6 @@ public class ExelParser implements IExelParser {
         responseParseSaveEntity.setParsedAndSavedFileNames(parsedAndSavedFileNames);
 
         return responseParseSaveEntity;
-    }
-
-    private NalogEntity splitNalogEntity(NalogEntity nalogEntityMain, NalogEntity nalogEntityFragment){
-        NalogEntity nalogEntity = new NalogEntity();
-
-        nalogEntity.setFielda( ifNullThenEmpty(nalogEntityMain.getFielda()) + "|" + nalogEntityFragment.getFielda());
-        nalogEntity.setFieldb( ifNullThenEmpty(nalogEntityMain.getFieldb()) + "|" + nalogEntityFragment.getFieldb());
-        nalogEntity.setFieldv( ifNullThenEmpty(nalogEntityMain.getFieldv()) + "|" + nalogEntityFragment.getFieldv());
-        nalogEntity.setField1( ifNullThenEmpty(nalogEntityMain.getField1()) + "|" + nalogEntityFragment.getField1());
-        nalogEntity.setField2( ifNullThenEmpty(nalogEntityMain.getField2()) + "|" + nalogEntityFragment.getField2());
-        nalogEntity.setField3( ifNullThenEmpty(nalogEntityMain.getField3()) + "|" + nalogEntityFragment.getField3());
-        nalogEntity.setField4( ifNullThenEmpty(nalogEntityMain.getField4()) + "|" + nalogEntityFragment.getField4());
-        nalogEntity.setField5( ifNullThenEmpty(nalogEntityMain.getField5()) + "|" + nalogEntityFragment.getField5());
-        nalogEntity.setField6( ifNullThenEmpty(nalogEntityMain.getField6()) + "|" + nalogEntityFragment.getField6());
-        nalogEntity.setField7( ifNullThenEmpty(nalogEntityMain.getField7()) + "|" + nalogEntityFragment.getField7());
-        nalogEntity.setField8( ifNullThenEmpty(nalogEntityMain.getField8()) + "|" + nalogEntityFragment.getField8());
-        nalogEntity.setField9( ifNullThenEmpty(nalogEntityMain.getField9()) + "|" + nalogEntityFragment.getField9());
-        nalogEntity.setField10( ifNullThenEmpty(nalogEntityMain.getField10()) + "|" + nalogEntityFragment.getField10());
-        nalogEntity.setField11( ifNullThenEmpty(nalogEntityMain.getField11()) + "|" + nalogEntityFragment.getField11());
-        nalogEntity.setField12( ifNullThenEmpty(nalogEntityMain.getField12()) + "|" + nalogEntityFragment.getField12());
-        nalogEntity.setField13( ifNullThenEmpty(nalogEntityMain.getField13()) + "|" + nalogEntityFragment.getField13());
-        nalogEntity.setField14( ifNullThenEmpty(nalogEntityMain.getField14()) + "|" + nalogEntityFragment.getField14());
-        nalogEntity.setField15( ifNullThenEmpty(nalogEntityMain.getField15()) + "|" + nalogEntityFragment.getField15());
-        nalogEntity.setField16( ifNullThenEmpty(nalogEntityMain.getField16()) + "|" + nalogEntityFragment.getField16());
-        nalogEntity.setField17( ifNullThenEmpty(nalogEntityMain.getField17()) + "|" + nalogEntityFragment.getField17());
-        nalogEntity.setField18( ifNullThenEmpty(nalogEntityMain.getField18()) + "|" + nalogEntityFragment.getField18());
-        nalogEntity.setField19( ifNullThenEmpty(nalogEntityMain.getField19()) + "|" + nalogEntityFragment.getField19());
-        nalogEntity.setField20( ifNullThenEmpty(nalogEntityMain.getField20()) + "|" + nalogEntityFragment.getField20());
-        nalogEntity.setField21( ifNullThenEmpty(nalogEntityMain.getField21()) + "|" + nalogEntityFragment.getField21());
-        nalogEntity.setField22( ifNullThenEmpty(nalogEntityMain.getField22()) + "|" + nalogEntityFragment.getField22());
-        nalogEntity.setField23( ifNullThenEmpty(nalogEntityMain.getField23()) + "|" + nalogEntityFragment.getField23());
-        nalogEntity.setField24( ifNullThenEmpty(nalogEntityMain.getField24()) + "|" + nalogEntityFragment.getField24());
-        nalogEntity.setField25( ifNullThenEmpty(nalogEntityMain.getField25()) + "|" + nalogEntityFragment.getField25());
-        nalogEntity.setTer(nalogEntityMain.getTer());
-        nalogEntity.setDat(nalogEntityMain.getDat());
-
-        return nalogEntity;
     }
 
     private String ifNullThenEmpty(String field){
@@ -197,45 +253,25 @@ public class ExelParser implements IExelParser {
         return RowEntityLeft.hashCode() == RowEntityRight.hashCode();
     }
 
-    private RowEntity getRowEntityWithTitleData(){
-        RowEntity rowEntityWithTitleData = new RowEntity();
-        LinkedHashMap<Short, String> cells = new LinkedHashMap<>();
-
-        cells.put((short) 0, "А");
-        cells.put((short) 1, "Б");
-        cells.put((short) 2, "В");
-        cells.put((short) 3, "1");
-        cells.put((short) 4, "2");
-        cells.put((short) 5, "3");
-        cells.put((short) 6, "4");
-        cells.put((short) 7, "5");
-        cells.put((short) 8, "6");
-        cells.put((short) 9, "7");
-        cells.put((short) 10, "8");
-        cells.put((short) 11, "9");
-        cells.put((short) 12, "10");
-        cells.put((short) 13, "11");
-        cells.put((short) 14, "12");
-        cells.put((short) 15, "13");
-        cells.put((short) 16, "14");
-        cells.put((short) 17, "15");
-        cells.put((short) 18, "16");
-        cells.put((short) 19, "17");
-        cells.put((short) 20, "18");
-        cells.put((short) 21, "19");
-        cells.put((short) 22, "20");
-        cells.put((short) 23, "21");
-        cells.put((short) 24, "22");
-        cells.put((short) 25, "23");
-        cells.put((short) 26, "24");
-        cells.put((short) 27, "25");
-        rowEntityWithTitleData.setCells(cells);
-
-        return rowEntityWithTitleData;
-    }
-
     private String getFileAddress(String fileDirectory, String fileName){
         return fileDirectory.concat(fileName);
+    }
+
+    private ResponseParseEntity getResponseEntity(boolean success, BookEntity bookEntity){
+        ResponseParseEntity responseParseEntity = new ResponseParseEntity();
+        responseParseEntity.setSuccess(success);
+        responseParseEntity.setBook(bookEntity);
+        return responseParseEntity;
+    }
+
+    private BookEntity getBookDTO(ArrayList<SheetEntity> sheetEntityList){
+        BookEntity bookEntity = new BookEntity();
+        bookEntity.setSheets(sheetEntityList);
+        return bookEntity;
+    }
+
+    private ResponseParseEntity getBadResponseEntity(){
+        return getResponseEntity(false, new BookEntity());
     }
 
     private BookEntity parseAndGetBookEntity(Workbook workbook){
@@ -294,22 +330,79 @@ public class ExelParser implements IExelParser {
         return getBookDTO(sheetEntityList);
     }
 
-    private ResponseParseEntity getResponseEntity(boolean success, BookEntity bookEntity){
-        ResponseParseEntity responseParseEntity = new ResponseParseEntity();
-        responseParseEntity.setSuccess(success);
-        responseParseEntity.setBook(bookEntity);
-        return responseParseEntity;
+
+    private NalogEntity splitNalogEntity(NalogEntity nalogEntityMain, NalogEntity nalogEntityFragment){
+        NalogEntity nalogEntity = new NalogEntity();
+
+        nalogEntity.setFielda( ifNullThenEmpty(nalogEntityMain.getFielda()) + "|" + nalogEntityFragment.getFielda());
+        nalogEntity.setFieldb( ifNullThenEmpty(nalogEntityMain.getFieldb()) + "|" + nalogEntityFragment.getFieldb());
+        nalogEntity.setFieldv( ifNullThenEmpty(nalogEntityMain.getFieldv()) + "|" + nalogEntityFragment.getFieldv());
+        nalogEntity.setField1( ifNullThenEmpty(nalogEntityMain.getField1()) + "|" + nalogEntityFragment.getField1());
+        nalogEntity.setField2( ifNullThenEmpty(nalogEntityMain.getField2()) + "|" + nalogEntityFragment.getField2());
+        nalogEntity.setField3( ifNullThenEmpty(nalogEntityMain.getField3()) + "|" + nalogEntityFragment.getField3());
+        nalogEntity.setField4( ifNullThenEmpty(nalogEntityMain.getField4()) + "|" + nalogEntityFragment.getField4());
+        nalogEntity.setField5( ifNullThenEmpty(nalogEntityMain.getField5()) + "|" + nalogEntityFragment.getField5());
+        nalogEntity.setField6( ifNullThenEmpty(nalogEntityMain.getField6()) + "|" + nalogEntityFragment.getField6());
+        nalogEntity.setField7( ifNullThenEmpty(nalogEntityMain.getField7()) + "|" + nalogEntityFragment.getField7());
+        nalogEntity.setField8( ifNullThenEmpty(nalogEntityMain.getField8()) + "|" + nalogEntityFragment.getField8());
+        nalogEntity.setField9( ifNullThenEmpty(nalogEntityMain.getField9()) + "|" + nalogEntityFragment.getField9());
+        nalogEntity.setField10( ifNullThenEmpty(nalogEntityMain.getField10()) + "|" + nalogEntityFragment.getField10());
+        nalogEntity.setField11( ifNullThenEmpty(nalogEntityMain.getField11()) + "|" + nalogEntityFragment.getField11());
+        nalogEntity.setField12( ifNullThenEmpty(nalogEntityMain.getField12()) + "|" + nalogEntityFragment.getField12());
+        nalogEntity.setField13( ifNullThenEmpty(nalogEntityMain.getField13()) + "|" + nalogEntityFragment.getField13());
+        nalogEntity.setField14( ifNullThenEmpty(nalogEntityMain.getField14()) + "|" + nalogEntityFragment.getField14());
+        nalogEntity.setField15( ifNullThenEmpty(nalogEntityMain.getField15()) + "|" + nalogEntityFragment.getField15());
+        nalogEntity.setField16( ifNullThenEmpty(nalogEntityMain.getField16()) + "|" + nalogEntityFragment.getField16());
+        nalogEntity.setField17( ifNullThenEmpty(nalogEntityMain.getField17()) + "|" + nalogEntityFragment.getField17());
+        nalogEntity.setField18( ifNullThenEmpty(nalogEntityMain.getField18()) + "|" + nalogEntityFragment.getField18());
+        nalogEntity.setField19( ifNullThenEmpty(nalogEntityMain.getField19()) + "|" + nalogEntityFragment.getField19());
+        nalogEntity.setField20( ifNullThenEmpty(nalogEntityMain.getField20()) + "|" + nalogEntityFragment.getField20());
+        nalogEntity.setField21( ifNullThenEmpty(nalogEntityMain.getField21()) + "|" + nalogEntityFragment.getField21());
+        nalogEntity.setField22( ifNullThenEmpty(nalogEntityMain.getField22()) + "|" + nalogEntityFragment.getField22());
+        nalogEntity.setField23( ifNullThenEmpty(nalogEntityMain.getField23()) + "|" + nalogEntityFragment.getField23());
+        nalogEntity.setField24( ifNullThenEmpty(nalogEntityMain.getField24()) + "|" + nalogEntityFragment.getField24());
+        nalogEntity.setField25( ifNullThenEmpty(nalogEntityMain.getField25()) + "|" + nalogEntityFragment.getField25());
+        nalogEntity.setTer(nalogEntityMain.getTer());
+        nalogEntity.setDat(nalogEntityMain.getDat());
+
+        return nalogEntity;
     }
 
-    private BookEntity getBookDTO(ArrayList<SheetEntity> sheetEntityList){
-        BookEntity bookEntity = new BookEntity();
-        bookEntity.setSheets(sheetEntityList);
-        return bookEntity;
-    }
+    private RowEntity getRowEntityWithTitleData(){
+        RowEntity rowEntityWithTitleData = new RowEntity();
+        LinkedHashMap<Short, String> cells = new LinkedHashMap<>();
 
-    private ResponseParseEntity getBadResponseEntity(){
-        return getResponseEntity(false, new BookEntity());
-    }
+        cells.put((short) 0, "А");
+        cells.put((short) 1, "Б");
+        cells.put((short) 2, "В");
+        cells.put((short) 3, "1");
+        cells.put((short) 4, "2");
+        cells.put((short) 5, "3");
+        cells.put((short) 6, "4");
+        cells.put((short) 7, "5");
+        cells.put((short) 8, "6");
+        cells.put((short) 9, "7");
+        cells.put((short) 10, "8");
+        cells.put((short) 11, "9");
+        cells.put((short) 12, "10");
+        cells.put((short) 13, "11");
+        cells.put((short) 14, "12");
+        cells.put((short) 15, "13");
+        cells.put((short) 16, "14");
+        cells.put((short) 17, "15");
+        cells.put((short) 18, "16");
+        cells.put((short) 19, "17");
+        cells.put((short) 20, "18");
+        cells.put((short) 21, "19");
+        cells.put((short) 22, "20");
+        cells.put((short) 23, "21");
+        cells.put((short) 24, "22");
+        cells.put((short) 25, "23");
+        cells.put((short) 26, "24");
+        cells.put((short) 27, "25");
+        rowEntityWithTitleData.setCells(cells);
 
+        return rowEntityWithTitleData;
+    }
 
 }

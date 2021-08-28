@@ -1,7 +1,9 @@
 package net.problem.appforkrit.services.impl;
 
 import net.problem.appforkrit.domain.entities.*;
+import net.problem.appforkrit.domain.repositories.DataRowsRepository;
 import net.problem.appforkrit.domain.repositories.NalogRepository;
+import net.problem.appforkrit.domain.repositories.RegionAndDateRepository;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.junit.jupiter.api.Test;
@@ -14,6 +16,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 
 import javax.persistence.MapKeyColumn;
 import java.nio.file.Files;
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -30,19 +33,26 @@ class ExelParserTest {
     @Spy
     @InjectMocks
     private ExelParser exelParser;
-
-    @Mock
-    private NalogRepository nalogRepository;
-
     @Mock
     private FileHelper fileHelper;
 
-    private final String FILE_NAME = "simple.xls";
+    @Mock
+    private NalogRepository nalogRepository;
+    @Mock
+    private RegionAndDateRepository regionAndDateRepository;
+    @Mock
+    private DataRowsRepository dataRowsRepository;
+
+
+    private final String FILE_NAME = "55_28.08.2021.xls";
     private final String FILE_DIRECTORY_FROM = "C:\\work\\Nalog\\To_load\\";
     private final String FILE_DIRECTORY_WHERE = "C:\\work\\Nalog\\Loaded\\";
+    private final Date SIMPLE_DATE = Date.valueOf("2021-08-28");
+    private final short SIMPLE_NUMBER_REGION = 55;
 
     @Test
     void tryParseAllFromFolderAndChekSizeAndFileNameResult() {
+
         ResponseParseSaveEntity result;
         String expectedFileName = FILE_NAME;
         int expectedParsedAndSavedFilNamesSize = 1;
@@ -56,6 +66,35 @@ class ExelParserTest {
                 () -> assertEquals(expectedParsedAndSavedFilNamesSize, result.getParsedAndSavedFileNames().size()),
                 () -> assertEquals(expectedFileName, result.getParsedAndSavedFileNames().get(0))
         );
+    }
+
+    @Test
+    void tryParseAllFromFolderUsedMethodNumberTwoAndCheckSizeAndFileNameResult(){
+        ResponseParseSaveEntity result;
+        String expectedFileName = FILE_NAME;
+        int expectedParsedAndSavedFilNamesSize = 1;
+        when(fileHelper.moveFileToDirectory(FILE_NAME, FILE_DIRECTORY_FROM, FILE_DIRECTORY_WHERE)).thenReturn(true);
+        when(fileHelper.getFileNamesFromDirectory(FILE_DIRECTORY_FROM)).thenReturn(getListWithFileName(FILE_NAME));
+        when(regionAndDateRepository.findByNumberRegionAndDate(SIMPLE_NUMBER_REGION, SIMPLE_DATE)).thenReturn(getSimpleRegionAndDateEntity());
+        doReturn(getResponseParseEntity()).when(exelParser).parseExelFileAndGetResponseParseEntity(FILE_DIRECTORY_FROM, FILE_NAME);
+
+        result = exelParser.parseAndSaveToTwoRepositoryAllExelFilesFromDirectoryAndMoveParsedFiles(FILE_DIRECTORY_FROM, FILE_DIRECTORY_WHERE);
+
+        assertAll(
+                () -> assertEquals(expectedParsedAndSavedFilNamesSize, result.getParsedAndSavedFileNames().size()),
+                () -> assertEquals(expectedFileName, result.getParsedAndSavedFileNames().get(0))
+        );
+
+    }
+
+    private RegionAndDateEntity getSimpleRegionAndDateEntity(){
+        RegionAndDateEntity regionAndDateEntity = new RegionAndDateEntity();
+
+        regionAndDateEntity.setId(1L);
+        regionAndDateEntity.setDate(SIMPLE_DATE);
+        regionAndDateEntity.setNumberRegion(SIMPLE_NUMBER_REGION);
+
+        return regionAndDateEntity;
     }
 
     private ArrayList<String> getListWithFileName(String fileName){
