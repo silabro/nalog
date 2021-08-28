@@ -4,7 +4,7 @@ import net.problem.appforkrit.domain.entities.ResponseParseEntity;
 import net.problem.appforkrit.domain.entities.ResponseParseSaveEntity;
 
 /**
- * Итерфейс сервиса который осуществляет парсинг файлов формата .xls и .xlsx
+ * Интерфейс сервиса который осуществляет парсинг файлов формата .xls и .xlsx
  */
 public interface IExelParser {
 
@@ -20,7 +20,7 @@ public interface IExelParser {
     ResponseParseEntity parseExelFileAndGetResponseParseEntity(String fileDirectory, String fileName);
 
     /**
-     * Считывает все файлы (формата .xls или .xlsx) из директории, сохраняет данные в репозиторий и перемещает успешно считанные в указаную директорию
+     * Считывает все файлы (формата .xls или .xlsx) из директории, сохраняет данные в репозиторий и перемещает успешно считанные в указанную директорию
      *
      * @param directoryWhereParse   - строка указывающая директорию откуда считывать файлы
      * @param directoryWhereMoveParsedFiles - строка указывающая куда перемещать файлы из которых информация была успешна записана в репозиторий
@@ -28,5 +28,15 @@ public interface IExelParser {
      * List содержащий в себе строки именований файлов которые были успешно записаны в репозиторий.
      */
     ResponseParseSaveEntity parseAndSaveToRepositoryAllExelFilesFromDirectoryAndMoveParsedFiles (String directoryWhereParse, String directoryWhereMoveParsedFiles);
+
+    /**
+     * Считывает все файлы (формата .xls или .xlsx) из директории, сохраняет данные в ДВА репозитория и перемещает успешно считанные в указанную директорию
+     *
+     * @param directoryWhereParse   - строка указывающая директорию откуда считывать файлы
+     * @param directoryWhereMoveParsedFiles - строка указывающая куда перемещать файлы из которых информация была успешна записана в репозиторий
+     * @return  - ResponseParseSaveEntity:
+     * List содержащий в себе строки именований файлов которые были успешно записаны в репозиторий.
+     */
+    ResponseParseSaveEntity parseAndSaveToTwoRepositoryAllExelFilesFromDirectoryAndMoveParsedFiles (String directoryWhereParse, String directoryWhereMoveParsedFiles);
 
 }
