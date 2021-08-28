@@ -13,8 +13,7 @@ public class DataRowsEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @ManyToOne(fetch = FetchType.LAZY)
-    private RegionAndDateEntity regionAndDate;
+    private Long regionAndDateId;
     private int numberRow;
     private String CELLa;
     private String CELLb;

@@ -17,6 +17,4 @@ public class RegionAndDateEntity {
     private Long id;
     private short numberRegion;
     private Date date;
-    @OneToMany(cascade = {CascadeType.ALL}, fetch = FetchType.LAZY, mappedBy = "regionAndDate")
-    private List<DataRowsEntity> dataRows;
 }
