@@ -2,6 +2,8 @@ package net.problem.appforkrit.services.impl;
 
 import net.problem.appforkrit.domain.entities.*;
 import net.problem.appforkrit.domain.repositories.NalogRepository;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -19,6 +21,7 @@ import java.util.LinkedHashMap;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
 @ExtendWith( MockitoExtension.class )
@@ -31,37 +34,28 @@ class ExelParserTest {
     @Mock
     private NalogRepository nalogRepository;
 
-    /**
-     * Временный тест для проверки метода парсинга и работы библиотеки org.apache.poi (для работы с Microsoft документами)
-     */
-    @Test
-    void tryParseAndCheckSuccess() {
-        boolean expectedSuccess = true;
-        ResponseParseEntity result;
-        String fileDirectory = "C:\\work\\Nalog\\To_load\\";
-        String fileName = "43_01.02.2021.xlsx";
+    @Mock
+    private FileHelper fileHelper;
 
-        result = exelParser.parseExelFileAndGetResponseParseEntity(fileDirectory,fileName);
+    private final String FILE_NAME = "simple.xls";
+    private final String FILE_DIRECTORY_FROM = "C:\\work\\Nalog\\To_load\\";
+    private final String FILE_DIRECTORY_WHERE = "C:\\work\\Nalog\\Loaded\\";
+
+    @Test
+    void tryParseAllFromFolderAndChekSizeAndFileNameResult() {
+        ResponseParseSaveEntity result;
+        String expectedFileName = FILE_NAME;
+        int expectedParsedAndSavedFilNamesSize = 1;
+        when(fileHelper.moveFileToDirectory(FILE_NAME, FILE_DIRECTORY_FROM, FILE_DIRECTORY_WHERE)).thenReturn(true);
+        when(fileHelper.getFileNamesFromDirectory(FILE_DIRECTORY_FROM)).thenReturn(getListWithFileName(FILE_NAME));
+        doReturn(getResponseParseEntity()).when(exelParser).parseExelFileAndGetResponseParseEntity(FILE_DIRECTORY_FROM, FILE_NAME);
+
+        result = exelParser.parseAndSaveToRepositoryAllExelFilesFromDirectoryAndMoveParsedFiles(FILE_DIRECTORY_FROM,FILE_DIRECTORY_WHERE);
 
         assertAll(
-                () -> assertEquals(expectedSuccess, result.isSuccess()),
-                () -> assertNotNull(result.getBook())
+                () -> assertEquals(expectedParsedAndSavedFilNamesSize, result.getParsedAndSavedFileNames().size()),
+                () -> assertEquals(expectedFileName, result.getParsedAndSavedFileNames().get(0))
         );
-    }
-
-    @Test
-    void tryParseAllFromFolder() {
-        ResponseParseSaveEntity result;
-        String fileName = "16_01.02.2021.xls";
-        String fileDirectoryFrom = "C:\\work\\Nalog\\To_load\\";
-        String fileDirectoryWhere = "C:\\work\\Nalog\\Loaded\\";
-        when(exelParser.parseExelFileAndGetResponseParseEntity(fileDirectoryFrom, fileName)).thenReturn(getResponseParseEntity());
-        when(exelParser.moveFileToDirectory(fileName, fileDirectoryFrom, fileDirectoryWhere)).thenReturn(true);
-        when(exelParser.getFileNamesFromDirectory(fileDirectoryFrom)).thenReturn(getListWithFileName(fileName));
-
-        result = exelParser.parseAndSaveToRepositoryAllExelFilesFromDirectoryAndMoveParsedFiles(fileDirectoryFrom,fileDirectoryWhere);
-
-        assertTrue(result.getParsedAndSavedFileNames().size() > 0);
     }
 
     private ArrayList<String> getListWithFileName(String fileName){
