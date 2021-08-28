@@ -56,7 +56,7 @@ public interface NalogMapper {
 
         dataRowsEntity.setNumberRow(numberRow);
         dataRowsEntity.setRegionAndDateId(regionAndDateId);
-        dataRowsEntity.setCell1(ifEmptyThenZero(cells.get((short) 0)));
+        dataRowsEntity.setCella(ifEmptyThenZero(cells.get((short) 0)));
         dataRowsEntity.setCellb(ifEmptyThenZero(cells.get((short) 1)));
         dataRowsEntity.setCellv(ifEmptyThenZero(cells.get((short) 2)));
         dataRowsEntity.setCell1(ifEmptyThenZero(cells.get((short) 3)));
@@ -89,7 +89,13 @@ public interface NalogMapper {
     }
 
     default String ifEmptyThenZero(String field){
-        return field.isEmpty() ? "0" : field;
+        String zero = "0";
+
+        if(field == null){
+            return zero;
+        }
+
+        return field.isEmpty() ? zero : field;
     }
 
 }
